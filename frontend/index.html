@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<!--
+  FICHIER : index.html
+  RÔLE    : Fichier HTML principal — point d'entrée du navigateur.
+            Vite part de ce fichier pour construire toute l'appli.
+            Le "vrai" contenu de la page est généré dynamiquement
+            par Vue.js via le composant App.vue.
+-->
+<html lang="fr">
+<head>
+  <!-- Encodage UTF-8 : permet les accents et caractères spéciaux -->
+  <meta charset="UTF-8">
+
+  <!-- Permet au site d'être responsive sur mobile et tablette -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Titre affiché dans l'onglet du navigateur -->
+  <title>Agence de Voyage</title>
+
+  <!-- Préconnexion aux serveurs Google Fonts pour charger la police plus rapidement -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Charge la police Poppins depuis Google Fonts (poids 300 à 700).
+       Utilisée sur tout le site pour un rendu moderne et lisible. -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Point de montage Vue.js.
+       Vue va injecter ici tout le contenu de l'application (App.vue).
+       Sans ce div, l'application ne s'affiche pas. -->
+  <div id="app"></div>
+
+  <!-- Charge le fichier JavaScript de démarrage Vue.js.
+       type="module" permet d'utiliser les imports ES6 (import/export). -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+/* ================================================
+   FICHIER : style.css
+   RÔLE    : Styles globaux appliqués à toute la page.
+             Contient le reset CSS, la police par défaut
+             et le fond en dégradé violet de l'application.
+             Les styles spécifiques aux composants sont
+             dans la section <style scoped> de App.vue.
+   ================================================ */
+
+/* RESET CSS : supprime les marges et paddings par défaut du navigateur
+   box-sizing: border-box — le padding est inclus dans la largeur/hauteur */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Style de base du body :
+   - Police Poppins (chargée depuis Google Fonts dans index.html)
+   - Fond en dégradé violet-mauve (couleurs du thème du site)
+   - min-height 100vh = le fond couvre toujours tout l'écran */
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+/* Le div #app créé par Vue.js prend toute la largeur disponible */
+#app {
+  width: 100%;
+}
