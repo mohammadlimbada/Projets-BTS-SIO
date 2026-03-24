@@ -102,7 +102,7 @@ npm -v
 
 ```bash
 git clone https://github.com/mohammadlimbada/Projets-BTS-SIO.git
-cd mon-agence-voyage
+cd Projets-BTS-SIO
 ```
 
 Ou télécharger le ZIP depuis GitHub et extraire dans un dossier.
