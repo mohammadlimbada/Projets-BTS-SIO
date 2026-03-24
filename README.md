@@ -114,7 +114,7 @@ Ou télécharger le ZIP depuis GitHub et extraire dans un dossier.
 1. Ouvrir **Laragon** → cliquer sur **Start All**
 2. Cliquer sur **Database** pour ouvrir HeidiSQL
 3. Se connecter : hôte `localhost`, utilisateur `root`, mot de passe vide
-4. Aller dans **Fichier > Exécuter un fichier SQL**, sélectionner `backend/database.sql`
+4. Aller dans **Fichier > Exécuter un fichier SQL**, sélectionner `database.sql` (à la racine du projet)
 5. Exécuter — la base `agence_voyage` est créée avec les 30 voyages et 40 avis
 
 ---
@@ -137,7 +137,7 @@ DB_NAME=agence_voyage
 
 ### Étape 4 — Installer les dépendances
 
-Ouvrir un **CMD** à la racine du projet (`mon-agence-voyage/`) :
+Ouvrir un **CMD** à la racine du projet (`Projets-BTS-SIO/`) :
 
 ```bash
 npm install
@@ -193,24 +193,24 @@ http://localhost:3000
 ## Structure du projet
 
 ```
-mon-agence-voyage/
+Projets-BTS-SIO/
+│
+├── database.sql           # Schéma SQL + données initiales (30 voyages, 40 avis)
+├── package.json           # Script racine — lance backend + frontend en une commande
 │
 ├── backend/
 │   ├── server.js          # Serveur Express — toutes les routes API + connexion MySQL
-│   ├── database.sql       # Schéma SQL + données initiales (30 voyages, 40 avis)
 │   ├── package.json       # Dépendances : Express, mysql2, cors, dotenv
 │   └── .env               # Variables d'environnement (à créer, non versionné)
 │
-├── frontend/
-│   ├── src/
-│   │   ├── App.vue        # Composant principal Vue.js (toute l'interface)
-│   │   ├── main.js        # Initialisation Vue
-│   │   └── style.css      # Styles globaux
-│   ├── index.html         # Point d'entrée HTML
-│   ├── vite.config.js     # Configuration Vite
-│   └── package.json       # Dépendances : Vue, Axios, Vite
-│
-└── package.json           # Script racine — lance backend + frontend en une commande
+└── frontend/
+    ├── src/
+    │   ├── App.vue        # Composant principal Vue.js (toute l'interface)
+    │   ├── main.js        # Initialisation Vue
+    │   └── style.css      # Styles globaux
+    ├── index.html         # Point d'entrée HTML
+    ├── vite.config.js     # Configuration Vite
+    └── package.json       # Dépendances : Vue, Axios, Vite
 ```
 
 ---
@@ -243,7 +243,7 @@ La base `agence_voyage` contient 4 tables :
 | `reservations` | Réservations avec statut (`en_attente_paiement` / `confirmée`) |
 | `messages` | Messages reçus via le formulaire de contact |
 
-Le fichier `backend/database.sql` génère toute la structure et insère les données de démonstration.
+Le fichier `database.sql` (à la racine) génère toute la structure et insère les données de démonstration.
 
 ---
 
