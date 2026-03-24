@@ -1,11 +1,11 @@
-# ✈️ VoyageExpress — Agence de Voyage en ligne
+#  VoyageExpress — Agence de Voyage en ligne
 
 Application web d'agence de voyage développée dans le cadre du **BTS SIO SLAM** (2ème année).  
 Le projet met en œuvre **Node.js / Express** côté serveur et **Vue.js 3** côté client, dans une architecture REST API + SPA.
 
 ---
 
-## 📋 Sommaire
+##  Sommaire
 
 - [Présentation du projet](#présentation-du-projet)
 - [Fonctionnalités principales](#fonctionnalités-principales)
@@ -30,7 +30,7 @@ Le projet est découpé en deux parties bien distinctes :
 
 ## Fonctionnalités principales
 
-### 🗺️ Catalogue de voyages
+###  Catalogue de voyages
 - Affichage de **30 destinations** avec photo, prix, durée et catégorie
 - Filtrage par catégorie : Plage, Ville, Montagne, Aventure, Culture
 - Barre de recherche par nom de destination ou pays
@@ -95,7 +95,7 @@ npm -v
 ### 3. Un navigateur web récent
 - Chrome, Firefox, Edge — n'importe lequel fait l'affaire
 
-> ⚠️ Aucun compte, aucune clé API externe, aucune base de données à configurer. Le projet fonctionne entièrement en local.
+>  Aucun compte, aucune clé API externe, aucune base de données à configurer. Le projet fonctionne entièrement en local.
 
 ---
 
@@ -122,7 +122,7 @@ npm install
 npm start
 ```
 
-✅ Si tout va bien, le terminal affiche :
+ Si tout va bien, le terminal affiche :
 ```
 Serveur démarré sur le port 5000
 ```
@@ -141,7 +141,7 @@ npm install
 npm run dev
 ```
 
-✅ Si tout va bien, le terminal affiche :
+ Si tout va bien, le terminal affiche :
 ```
   VITE v4.x.x  ready in xxx ms
 
@@ -158,7 +158,7 @@ Ouvrir un navigateur web et aller sur :
 http://localhost:3000
 ```
 
-Le site est maintenant visible et fonctionnel. 🎉
+Le site est maintenant visible et fonctionnel. 
 
 ---
 
@@ -215,9 +215,5 @@ voyage-app/
 
 **Mohammad LIMBADA**  
 BTS SIO SLAM — 2ème année  
-📧 mohammad.limbada97494@gmail.com  
-🔗 [GitHub](https://github.com/votre-utilisateur)
+ mohammad.limbada97494@gmail.com  
 
----
-
-> Projet réalisé dans le cadre d'un TP sur les frameworks JavaScript — utilisation de Node.js et Vue.js 3.
