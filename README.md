@@ -1,213 +1,243 @@
 #  VoyageExpress — Agence de Voyage en ligne
 
 Application web d'agence de voyage développée dans le cadre du **BTS SIO SLAM** (2ème année).  
-Le projet met en œuvre **Node.js / Express** côté serveur et **Vue.js 3** côté client, dans une architecture REST API + SPA.
+Le projet suit une architecture **client-serveur** : une API REST Node.js/Express côté backend, une SPA Vue.js 3 côté frontend, et une base de données **MySQL** gérée via Laragon.
 
 ---
 
 ##  Sommaire
 
-- [Présentation du projet](#présentation-du-projet)
+- [Présentation](#présentation)
 - [Fonctionnalités principales](#fonctionnalités-principales)
 - [Stack technique](#stack-technique)
 - [Prérequis](#prérequis)
 - [Installation et lancement](#installation-et-lancement)
-- [Utilisation](#utilisation)
 - [Structure du projet](#structure-du-projet)
+- [Endpoints API](#endpoints-api)
+- [Base de données](#base-de-données)
 - [Auteur](#auteur)
 
 ---
 
-## Présentation du projet
+## Présentation
 
-VoyageExpress est une application web qui permet à des utilisateurs de consulter un catalogue de voyages, de filtrer les destinations par catégorie, de voir le détail de chaque offre et de soumettre une réservation en ligne.
+VoyageExpress est un site d'agence de voyage permettant à des utilisateurs de consulter un catalogue de destinations, de filtrer et rechercher des voyages, de consulter les avis d'autres clients et de soumettre une réservation en ligne.
 
-Le projet est découpé en deux parties bien distinctes :
-- Un **backend REST** développé avec Express, qui expose les données et gère les réservations
-- Un **frontend SPA** développé avec Vue.js 3, qui consomme l'API et affiche l'interface
+Le projet est découpé en deux parties :
+- Un **backend REST** en Node.js + Express, connecté à MySQL, qui expose les données via une API
+- Un **frontend SPA** en Vue.js 3 qui consomme cette API et gère toute l'interface utilisateur
+
+Les deux serveurs se lancent **en une seule commande** depuis la racine du projet.
 
 ---
 
 ## Fonctionnalités principales
 
 ###  Catalogue de voyages
-- Affichage de **30 destinations** avec photo, prix, durée et catégorie
-- Filtrage par catégorie : Plage, Ville, Montagne, Aventure, Culture
-- Barre de recherche par nom de destination ou pays
-- Affichage en grille responsive adapté mobile/desktop
+- 30 destinations avec photo, prix, durée et catégorie
+- Filtrage par catégorie : Plage, Ville, Montagne, Aventure, Culturel
+- Recherche dynamique par nom ou destination
+- Note moyenne calculée depuis les avis en base de données
 
-### 📄 Page de détail
-- Description complète du voyage
-- Photo principale + galerie
-- Vidéo de présentation de la destination (pour certains voyages)
-- Liste des prestations incluses (vol, hôtel, guide...)
-- Prix total et places disponibles
+###  Page de détail
+- Description complète, prix, dates, places disponibles
+- Liste des prestations incluses
+- Lecteur vidéo YouTube intégré (selon la destination)
 
-### 📝 Réservation
-- Formulaire de réservation avec nom, prénom, email, date et nombre de personnes
+###  Réservation
+- Formulaire complet avec calcul automatique du prix total
 - Validation des champs côté client
-- Envoi de la réservation vers l'API backend (POST)
-- Confirmation affichée à l'utilisateur
-- Les réservations reçues s'affichent dans le terminal du serveur en temps réel
+- Enregistrement en base MySQL avec statut `en_attente_paiement`
 
-### 📞 Page Contact
-- Informations de l'agence (adresse, téléphone, horaires)
-- Email de contact : mohammad.limbada97494@gmail.com
-- Formulaire de message
+### Avis clients
+- Consultation et ajout d'avis par voyage (note 1 à 5)
+- Moyenne calculée dynamiquement depuis la base
+
+###  Paiement (simulé)
+- Confirmation de paiement via l'API — passe le statut à `confirmée` en base
+
+###  Contact
+- Formulaire enregistré en base de données
+- Email : mohammad.limbada97494@gmail.com
 
 ---
 
 ## Stack technique
 
-| Côté | Technologie | Rôle |
-|------|-------------|------|
+| Couche | Technologie | Rôle |
+|--------|-------------|------|
 | Backend | Node.js | Environnement d'exécution JavaScript |
-| Backend | Express | Framework HTTP / création de l'API REST |
-| Backend | CORS | Middleware pour autoriser les requêtes cross-origin |
+| Backend | Express | Framework HTTP — API REST |
+| Backend | mysql2 | Pilote Node.js pour MySQL |
+| Backend | dotenv | Variables d'environnement |
+| Backend | CORS | Requêtes cross-origin |
 | Frontend | Vue.js 3 | Framework JavaScript (Composition API) |
-| Frontend | Axios | Client HTTP pour consommer l'API |
-| Frontend | Vite | Outil de build et serveur de développement |
-| Données | Mémoire (Array JS) | Stockage des voyages et réservations en mémoire |
-
-> Aucune base de données externe n'est requise. Les données sont chargées directement en mémoire au démarrage du serveur.
+| Frontend | Axios | Requêtes HTTP vers l'API |
+| Frontend | Vite | Build tool et serveur de développement |
+| BDD | MySQL (Laragon) | Base de données relationnelle |
 
 ---
 
 ## Prérequis
 
-Avant de lancer le projet, les éléments suivants doivent être installés sur la machine :
-
-### 1. Node.js (obligatoire)
-- Version recommandée : **LTS (v18 ou supérieure)**
-- Téléchargement : https://nodejs.org/
-- Vérification de l'installation :
+### 1. Node.js
+- Version **LTS v18 ou supérieure** — https://nodejs.org/
+- Vérification :
 ```bash
 node -v
 npm -v
 ```
 
-### 2. Visual Studio Code (recommandé)
-- Téléchargement : https://code.visualstudio.com/
-- Extensions recommandées :
-  - `Volar` (support Vue.js)
-  - `ESLint`
+### 2. Laragon
+- Laragon fournit MySQL et un environnement de développement local pour Windows
+- Téléchargement : https://laragon.org/download/ (version **Full**)
+- Lancer Laragon et cliquer sur **Start All** pour démarrer MySQL
 
 ### 3. Un navigateur web récent
-- Chrome, Firefox, Edge — n'importe lequel fait l'affaire
+- Chrome, Firefox ou Edge
 
->  Aucun compte, aucune clé API externe, aucune base de données à configurer. Le projet fonctionne entièrement en local.
+> VS Code n'est **pas obligatoire** pour lancer le projet — un simple CMD suffit.
 
 ---
 
 ## Installation et lancement
 
-### Étape 1 — Cloner ou télécharger le projet
+### Étape 1 — Récupérer le projet
 
 ```bash
 git clone https://github.com/votre-utilisateur/voyage-app.git
-cd voyage-app
+cd mon-agence-voyage
 ```
 
-Ou télécharger le ZIP depuis GitHub et l'extraire dans un dossier.
+Ou télécharger le ZIP depuis GitHub et extraire dans un dossier.
 
 ---
 
-### Étape 2 — Installer et lancer le backend
+### Étape 2 — Créer la base de données
 
-Ouvrir un **premier terminal** dans VS Code (`Ctrl + J`) :
-
-```bash
-cd backend
-npm install
-npm start
-```
-
- Si tout va bien, le terminal affiche :
-```
-Serveur démarré sur le port 5000
-```
-
-Le backend est accessible sur : http://localhost:5000
+1. Ouvrir **Laragon** → `Start All`
+2. Cliquer sur **Database** pour ouvrir HeidiSQL
+3. Se connecter : hôte `localhost`, utilisateur `root`, mot de passe vide
+4. Aller dans **Fichier > Exécuter un fichier SQL**, sélectionner `database.sql` à la racine
+5. Exécuter — la base `agence_voyage` est créée avec les 30 voyages et 40 avis
 
 ---
 
-### Étape 3 — Installer et lancer le frontend
+### Étape 3 — Créer le fichier `.env`
 
-Ouvrir un **second terminal** dans VS Code (`+` en haut à droite du terminal) :
+Dans le dossier `backend/`, créer un fichier `.env` :
+
+```env
+PORT=5000
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=agence_voyage
+```
+
+> Laragon n'a pas de mot de passe root par défaut — laisser `DB_PASSWORD` vide.
+
+---
+
+### Étape 4 — Installer les dépendances
+
+Ouvrir un **CMD** à la racine du projet (`mon-agence-voyage/`) :
 
 ```bash
-cd frontend
 npm install
+cd backend && npm install && cd ..
+cd backend/frontend && npm install && cd ../..
+```
+
+---
+
+### Étape 5 — Lancer le projet
+
+Toujours depuis la **racine du projet**, une seule commande suffit :
+
+```bash
 npm run dev
 ```
 
- Si tout va bien, le terminal affiche :
-```
-  VITE v4.x.x  ready in xxx ms
+Le terminal affiche alors les deux serveurs démarrés simultanément :
 
-  ➜  Local:   http://localhost:3000/
+```
+[BACKEND]  > node server.js
+[FRONTEND] > vite
+[BACKEND]  Backend démarré sur http://localhost:5000
+[BACKEND]   Connexion MySQL OK — base agence_voyage accessible
+[FRONTEND] VITE v5.4.20  ready in 256 ms
+[FRONTEND] ➜  Local:   http://localhost:3000/
 ```
 
 ---
 
-### Étape 4 — Ouvrir l'application
+### Étape 6 — Ouvrir l'application
 
-Ouvrir un navigateur web et aller sur :
+Dans un navigateur, aller sur :
 
 ```
 http://localhost:3000
 ```
 
-Le site est maintenant visible et fonctionnel. 
-
----
-
-## Utilisation
-
-### Naviguer dans le catalogue
-Sur la page d'accueil, cliquer sur **"Voir les voyages"** pour accéder au catalogue.  
-Utiliser les boutons de filtre (Plage, Ville, Montagne...) ou la barre de recherche pour trouver une destination.
-
-### Voir le détail d'un voyage
-Cliquer sur la carte d'un voyage pour accéder à sa page de détail avec les informations complètes.
-
-### Faire une réservation
-Depuis la page de détail, cliquer sur **"Réserver"**.  
-Remplir le formulaire et valider. La réservation est enregistrée côté serveur et une confirmation s'affiche.
-
-### Vérifier les réservations (côté serveur)
-Les réservations reçues s'affichent directement dans le **terminal du backend** (Terminal 1).
+ Le site est fonctionnel.
 
 ---
 
 ## Structure du projet
 
 ```
-voyage-app/
+mon-agence-voyage/
+│
+├── database.sql              → Création de la BDD + données initiales (30 voyages, 40 avis)
+├── package.json              → Script racine — lance backend + frontend en une commande
 │
 ├── backend/
-│   ├── package.json        → Dépendances backend (Express, CORS)
-│   └── server.js           → Serveur Express + routes API + données des 30 voyages
+│   ├── .env                  → Variables d'environnement MySQL (à créer, non versionné)
+│   ├── .gitignore
+│   ├── package.json          → Dépendances : Express, mysql2, cors, dotenv
+│   └── server.js             → Serveur Express + toutes les routes API + connexion MySQL
 │
-└── frontend/
-    ├── package.json        → Dépendances frontend (Vue, Axios, Vite)
-    ├── vite.config.js      → Configuration Vite (proxy vers l'API)
-    ├── index.html          → Point d'entrée HTML
+└── backend/frontend/
+    ├── package.json          → Dépendances : Vue, Axios, Vite
+    ├── vite.config.js        → Configuration Vite (port 3000)
+    ├── index.html            → Point d'entrée HTML
     └── src/
-        ├── main.js         → Initialisation de l'application Vue
-        ├── App.vue         → Composant principal (toute l'interface)
-        └── style.css       → Styles globaux
+        ├── main.js           → Initialisation Vue
+        ├── App.vue           → Composant principal (toute l'interface)
+        └── style.css         → Styles globaux
 ```
 
 ---
 
-## Endpoints API (Backend)
+## Endpoints API
 
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| GET | `/api/voyages` | Récupère la liste de tous les voyages |
-| GET | `/api/voyages/:id` | Récupère un voyage par son identifiant |
-| POST | `/api/reservations` | Enregistre une nouvelle réservation |
+| GET | `/api/voyages` | Liste tous les voyages (`?categorie=` `?recherche=` optionnels) |
+| GET | `/api/voyages/:id` | Détail d'un voyage |
+| GET | `/api/avis` | 6 avis récents, ou `?voyageId=X` pour un voyage précis |
+| GET | `/api/avis/stats` | Nombre d'avis par voyage |
+| POST | `/api/avis` | Ajouter un avis `{ voyageId, auteur, note, texte }` |
+| POST | `/api/reservations` | Créer une réservation |
+| POST | `/api/paiement` | Confirmer le paiement `{ reservationId }` |
+| POST | `/api/contact` | Enregistrer un message de contact |
+
+---
+
+## Base de données
+
+La base `agence_voyage` contient 4 tables :
+
+| Table | Description |
+|-------|-------------|
+| `voyages` | 30 destinations : titre, destination, description, prix, durée, image, vidéo, inclus (JSON), catégorie |
+| `avis` | Avis clients liés à un voyage (note 1-5, auteur, texte, date) |
+| `reservations` | Réservations avec statut (`en_attente_paiement` / `confirmée`) |
+| `messages` | Messages reçus via le formulaire de contact |
+
+Le fichier `database.sql` génère toute la structure et insère les données de démonstration.
 
 ---
 
@@ -215,5 +245,4 @@ voyage-app/
 
 **Mohammad LIMBADA**  
 BTS SIO SLAM — 2ème année  
- mohammad.limbada97494@gmail.com  
-
+ mohammad.limbada97494@gmail.com
