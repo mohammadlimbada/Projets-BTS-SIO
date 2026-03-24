@@ -67,6 +67,7 @@ Les deux serveurs se lancent **en une seule commande** depuis la racine du proje
 | Backend | dotenv | Variables d'environnement |
 | Backend | CORS | Requêtes cross-origin |
 | Frontend | Vue.js 3 | Framework JavaScript (Composition API) |
+| Frontend | Vue Router 4 | Navigation entre les pages (SPA) |
 | Frontend | Axios 1.6 | Requêtes HTTP vers l'API |
 | Frontend | Vite 5 | Build tool et serveur de développement |
 | BDD | MySQL (Laragon) | Base de données relationnelle |
@@ -182,6 +183,7 @@ http://localhost:3000
 
 | Variable | Valeur par défaut | Description |
 |---|---|---|
+| `PORT` | `5000` | Port d'écoute du serveur backend |
 | `DB_HOST` | `localhost` | Hôte du serveur MySQL |
 | `DB_PORT` | `3306` | Port MySQL |
 | `DB_USER` | `root` | Utilisateur MySQL |
