@@ -12,10 +12,8 @@
         <!-- Logo de l'agence -->
         <h1 class="logo">✈️ Voyage Express</h1>
 
-        <!-- Navigation principale — 4 onglets -->
+        <!-- Navigation principale -->
         <nav class="nav">
-          <!-- @click : quand on clique, change la page active -->
-          <!-- :class="{ active: ... }" : ajoute la classe "active" si c'est la page courante -->
           <button @click="pageActive = 'home'" :class="{ active: pageActive === 'home' }">
             Accueil
           </button>
@@ -28,9 +26,135 @@
           <button @click="pageActive = 'projet'" :class="{ active: pageActive === 'projet' }" class="btn-projet">
             📋 Projet
           </button>
+
+          <!-- Bouton Admin — visible uniquement si l'utilisateur connecté est admin -->
+          <button
+            v-if="estAdmin"
+            @click="pageActive = 'admin'"
+            :class="{ active: pageActive === 'admin' }"
+            class="btn-admin-nav"
+          >
+            ⚙️ Admin
+          </button>
+
+          <!-- Bloc AUTH : boutons si non connecté -->
+          <div v-if="!estConnecte" class="nav-auth">
+            <button @click="modalAuthActive = 'login'" class="btn-nav-login">Connexion</button>
+            <button @click="modalAuthActive = 'register'" class="btn-nav-register">Inscription</button>
+          </div>
+
+          <!-- Bloc USER : nom + déconnexion si connecté -->
+          <div v-else class="nav-user">
+            <span class="nav-user-nom">
+              {{ utilisateurConnecte.prenom }}
+              <span v-if="estAdmin" class="badge-admin">Admin</span>
+            </span>
+            <button @click="seDeconnecter" class="btn-nav-deconnexion">Déconnexion</button>
+          </div>
         </nav>
       </div>
     </header>
+
+    <!-- ================================================
+         MODALE D'AUTHENTIFICATION
+         Affichée quand modalAuthActive vaut 'login' ou 'register'.
+         @click.self = clic sur le fond sombre ferme la modale.
+         ================================================ -->
+    <div v-if="modalAuthActive" class="modal-overlay" @click.self="modalAuthActive = null">
+      <div class="modal-card">
+
+        <!-- Onglets Connexion / Inscription
+             :class="{ active: ... }" : ajoute la classe CSS 'active' si l'onglet correspond à modalAuthActive
+             authMessage = '' : réinitialise le message d'erreur/succès à chaque changement d'onglet -->
+        <div class="modal-tabs">
+          <button
+            :class="{ active: modalAuthActive === 'login' }"
+            @click="modalAuthActive = 'login'; authMessage = ''"
+          >Connexion</button>
+          <button
+            :class="{ active: modalAuthActive === 'register' }"
+            @click="modalAuthActive = 'register'; authMessage = ''"
+          >Inscription</button>
+        </div>
+
+        <!-- Message feedback -->
+        <div v-if="authMessage"
+             :class="authMessageType === 'succes' ? 'message-succes' : 'message-erreur'"
+             class="auth-message">
+          {{ authMessage }}
+        </div>
+
+        <!-- FORMULAIRE CONNEXION
+             v-if="modalAuthActive === 'login'" : n'affiche ce formulaire que si l'onglet actif est 'login'
+             @submit.prevent : intercepte la soumission HTML et appelle seConnecter() sans rechargement de page -->
+        <form v-if="modalAuthActive === 'login'" @submit.prevent="seConnecter" class="form">
+          <div class="form-group">
+            <label>Email *</label>
+            <!-- v-model lie en temps réel la valeur saisie à formLogin.email (objet réactif) -->
+            <input v-model="formLogin.email" type="email" placeholder="jean@email.com" required>
+          </div>
+          <div class="form-group">
+            <label>Mot de passe *</label>
+            <!-- type="password" : masque les caractères saisis avec des points -->
+            <input v-model="formLogin.mot_de_passe" type="password" placeholder="••••••••" required>
+          </div>
+          <!-- :disabled="authLoading" : grise le bouton pendant l'appel API pour éviter les doubles clics
+               L'expression ternaire change le texte : 'Connexion...' si en cours, 'Se connecter' sinon -->
+          <button type="submit" class="btn-submit" :disabled="authLoading">
+            {{ authLoading ? 'Connexion...' : 'Se connecter' }}
+          </button>
+          <p class="modal-switch-link">
+            Pas encore de compte ?
+            <!-- Bascule vers l'onglet inscription ET réinitialise le message d'erreur précédent -->
+            <span @click="modalAuthActive = 'register'; authMessage = ''">S'inscrire</span>
+          </p>
+        </form>
+
+        <!-- FORMULAIRE INSCRIPTION
+             v-if="modalAuthActive === 'register'" : affiché uniquement si l'onglet actif est 'register'
+             @submit.prevent : intercepte la soumission et appelle sInscrire() (validation + appel API) -->
+        <form v-if="modalAuthActive === 'register'" @submit.prevent="sInscrire" class="form">
+          <!-- Prénom + Nom côte à côte grâce à form-row (grille 2 colonnes) -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Prénom *</label>
+              <input v-model="formRegister.prenom" type="text" placeholder="Jean" required>
+            </div>
+            <div class="form-group">
+              <label>Nom *</label>
+              <input v-model="formRegister.nom" type="text" placeholder="Dupont" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            <input v-model="formRegister.email" type="email" placeholder="jean@email.com" required>
+          </div>
+          <div class="form-group">
+            <label>Mot de passe * (6 caractères minimum)</label>
+            <!-- minlength="6" : validation HTML5 native — le navigateur bloque si < 6 caractères
+                 La vérification côté script (sInscrire) double-vérifie pour plus de sécurité -->
+            <input v-model="formRegister.mot_de_passe" type="password" placeholder="••••••••" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label>Confirmer le mot de passe *</label>
+            <!-- Champ de confirmation : la fonction sInscrire() compare ce champ avec mot_de_passe -->
+            <input v-model="formRegister.mot_de_passe_confirm" type="password" placeholder="••••••••" required>
+          </div>
+          <!-- :disabled="authLoading" : même principe que pour le formulaire login (anti double-clic) -->
+          <button type="submit" class="btn-submit" :disabled="authLoading">
+            {{ authLoading ? 'Inscription...' : 'Créer mon compte' }}
+          </button>
+          <p class="modal-switch-link">
+            Déjà un compte ?
+            <!-- Bascule vers l'onglet connexion ET réinitialise le message d'erreur -->
+            <span @click="modalAuthActive = 'login'; authMessage = ''">Se connecter</span>
+          </p>
+        </form>
+
+        <!-- Bouton ✕ pour fermer la modale : modalAuthActive = null la masque (v-if devient faux) -->
+        <button class="modal-close" @click="modalAuthActive = null">✕</button>
+      </div>
+    </div>
 
     <!-- ================================================
          PAGE ACCUEIL
@@ -807,6 +931,137 @@
     </div>
 
     <!-- ================================================
+         PAGE ADMIN
+         Accessible uniquement si pageActive === 'admin' ET si admin.
+         La vraie protection est côté backend (verifierToken + verifierAdmin).
+         ================================================ -->
+    <div v-if="pageActive === 'admin'" class="page">
+      <div class="container">
+
+        <!-- Guard frontend : accès refusé si non admin -->
+        <div v-if="!estAdmin" class="admin-acces-refuse">
+          <h2>Accès refusé</h2>
+          <p>Cette page est réservée à l'administrateur.</p>
+          <button @click="pageActive = 'home'" class="btn-primary">Retour à l'accueil</button>
+        </div>
+
+        <div v-else>
+          <h2 class="page-title">⚙️ Administration — Ajouter un Voyage</h2>
+
+          <div class="admin-card">
+            <h3>Nouveau Voyage</h3>
+
+            <!-- Message succès ou erreur -->
+            <div v-if="adminMessage"
+                 :class="adminMessageType === 'succes' ? 'message-succes' : 'message-erreur'"
+                 class="admin-message">
+              {{ adminMessage }}
+            </div>
+
+            <form @submit.prevent="ajouterVoyage" class="form">
+
+              <!-- Titre + Destination -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Titre du voyage *</label>
+                  <input v-model="formAdmin.titre" type="text" placeholder="Ex : Maldives Paradisiaques" required>
+                </div>
+                <div class="form-group">
+                  <label>Destination *</label>
+                  <input v-model="formAdmin.destination" type="text" placeholder="Ex : Maldives" required>
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div class="form-group">
+                <label>Description *</label>
+                <textarea v-model="formAdmin.description" rows="4" placeholder="Décrivez le voyage..." required></textarea>
+              </div>
+
+              <!-- Prix + Durée + Places -->
+              <div class="form-row form-row-3">
+                <div class="form-group">
+                  <label>Prix (€/personne) *</label>
+                  <input v-model="formAdmin.prix" type="number" min="1" step="0.01" placeholder="Ex : 1200" required>
+                </div>
+                <div class="form-group">
+                  <label>Durée (jours) *</label>
+                  <input v-model="formAdmin.duree" type="number" min="1" max="365" placeholder="Ex : 7" required>
+                </div>
+                <div class="form-group">
+                  <label>Places disponibles *</label>
+                  <input v-model="formAdmin.placesDisponibles" type="number" min="1" placeholder="Ex : 20" required>
+                </div>
+              </div>
+
+              <!-- Dates -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Date de départ *</label>
+                  <input v-model="formAdmin.dateDepart" type="date" required>
+                </div>
+                <div class="form-group">
+                  <label>Date de retour *</label>
+                  <input v-model="formAdmin.dateRetour" type="date" :min="formAdmin.dateDepart" required>
+                </div>
+              </div>
+
+              <!-- Catégorie -->
+              <div class="form-group">
+                <label>Catégorie *</label>
+                <select v-model="formAdmin.categorie" required class="contact-select">
+                  <option value="">-- Choisissez une catégorie --</option>
+                  <option value="plage">🏖️ Plage</option>
+                  <option value="ville">🏙️ Ville</option>
+                  <option value="montagne">⛰️ Montagne</option>
+                  <option value="aventure">🎒 Aventure</option>
+                  <option value="culturel">🎭 Culturel</option>
+                </select>
+              </div>
+
+              <!-- Image URL -->
+              <div class="form-group">
+                <label>URL de l'image * (Unsplash recommandé)</label>
+                <input v-model="formAdmin.image" type="url" placeholder="https://images.unsplash.com/photo-...?w=800" required>
+                <div v-if="formAdmin.image" class="admin-img-preview">
+                  <img :src="formAdmin.image" alt="Prévisualisation" @error="(e) => e.target.style.display='none'">
+                </div>
+              </div>
+
+              <!-- Vidéo YouTube (optionnel) -->
+              <div class="form-group">
+                <label>URL YouTube (optionnel)</label>
+                <input v-model="formAdmin.video" type="url" placeholder="https://www.youtube.com/watch?v=...">
+              </div>
+
+              <!-- Services inclus (liste dynamique) -->
+              <div class="form-group">
+                <label>Services inclus</label>
+                <div class="inclus-tags">
+                  <span v-for="(item, index) in formAdmin.inclus" :key="index" class="inclus-tag">
+                    {{ item }}
+                    <button type="button" @click="supprimerInclus(index)" class="inclus-tag-remove">✕</button>
+                  </span>
+                </div>
+                <div class="inclus-input-row">
+                  <input v-model="nouvelInclus" type="text" placeholder="Ex : Vol aller-retour" @keydown.enter.prevent="ajouterInclus">
+                  <button type="button" @click="ajouterInclus" class="btn-ajouter-inclus">+ Ajouter</button>
+                </div>
+                <p class="form-hint">Appuyez sur Entrée ou cliquez sur "Ajouter" après chaque service</p>
+              </div>
+
+              <button type="submit" class="btn-submit btn-admin-submit" :disabled="adminLoading">
+                {{ adminLoading ? 'Ajout en cours...' : '✈️ Ajouter le voyage au catalogue' }}
+              </button>
+
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ================================================
          FOOTER — Pied de page affiché sur toutes les pages
          ================================================ -->
     <footer class="footer">
@@ -838,7 +1093,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 
 // URL de base de l'API backend — toutes les requêtes commencent par cette URL
-const API_URL = 'http://localhost:5000/api'
+const API_URL = '/api'
 
 // ================================================
 // VARIABLES RÉACTIVES (ref)
@@ -964,6 +1219,284 @@ const paiementLoading = ref(false)
 const messagePaiement = ref('')
 
 // ================================================
+// AUTHENTIFICATION
+// Variables et fonctions liées au système de connexion,
+// d'inscription et d'administration.
+// ================================================
+
+// Objet représentant l'utilisateur actuellement connecté.
+// null = personne n'est connecté.
+// Structure quand connecté : { id, nom, prenom, email, role }
+const utilisateurConnecte = ref(null)
+
+// Token JWT reçu du backend après connexion/inscription.
+// localStorage.getItem('voyage_token') : récupère le token sauvegardé au dernier chargement.
+// Si aucun token en localStorage, token vaut null (pas de session).
+const token = ref(localStorage.getItem('voyage_token') || null)
+
+// Contrôle l'affichage de la modale d'authentification :
+// null     = modale fermée
+// 'login'  = modale ouverte sur l'onglet "Connexion"
+// 'register' = modale ouverte sur l'onglet "Inscription"
+const modalAuthActive = ref(null)
+
+// Champs du formulaire de connexion
+const formLogin = ref({
+  email: '',        // Email saisi par l'utilisateur
+  mot_de_passe: '' // Mot de passe saisi (jamais stocké, utilisé uniquement pour la requête)
+})
+
+// Champs du formulaire d'inscription
+const formRegister = ref({
+  nom: '',                   // Nom de famille
+  prenom: '',                // Prénom
+  email: '',                 // Email (doit être unique en base)
+  mot_de_passe: '',          // Mot de passe choisi (envoyé au backend pour hashage)
+  mot_de_passe_confirm: ''   // Confirmation côté frontend uniquement (non envoyée au backend)
+})
+
+const authLoading = ref(false) // true pendant la requête login/register (désactive le bouton)
+const authMessage = ref('')    // Message d'erreur ou de succès affiché dans la modale
+const authMessageType = ref('') // Type du message : 'succes' (vert) ou 'erreur' (rouge)
+
+// ---- Page admin ----
+
+// Tous les champs du formulaire d'ajout de voyage (page admin)
+const formAdmin = ref({
+  titre: '',              // Nom du voyage (ex: "Maldives Paradisiaques")
+  destination: '',        // Pays ou région (ex: "Maldives")
+  description: '',        // Texte descriptif complet
+  prix: '',               // Prix en € par personne (string → converti en Float avant envoi)
+  duree: '',              // Durée en jours (string → converti en Int avant envoi)
+  dateDepart: '',         // Date de départ au format "YYYY-MM-DD"
+  dateRetour: '',         // Date de retour au format "YYYY-MM-DD"
+  image: '',              // URL de l'image (Unsplash recommandé)
+  video: '',              // URL YouTube (optionnel)
+  placesDisponibles: '',  // Nombre de places (string → converti en Int avant envoi)
+  categorie: '',          // Catégorie : 'plage' | 'ville' | 'montagne' | 'aventure' | 'culturel'
+  inclus: []              // Tableau des services inclus (ex: ["Vol", "Hôtel"])
+})
+
+// Champ temporaire pour saisir un service avant de l'ajouter au tableau inclus
+const nouvelInclus = ref('')
+
+const adminLoading = ref(false)    // true pendant l'envoi du nouveau voyage au backend
+const adminMessage = ref('')       // Message de succès ou d'erreur après soumission admin
+const adminMessageType = ref('')   // Type du message : 'succes' ou 'erreur'
+
+// computed : valeur calculée automatiquement quand utilisateurConnecte change.
+// !== null : vrai si quelqu'un est connecté (même un utilisateur basique)
+const estConnecte = computed(() => utilisateurConnecte.value !== null)
+
+// ?. (optional chaining) : accède à .role sans erreur si utilisateurConnecte est null
+// Retourne true uniquement si le rôle est exactement 'admin'
+const estAdmin = computed(() => utilisateurConnecte.value?.role === 'admin')
+
+// Helper qui retourne l'objet de configuration Axios avec le header d'authentification.
+// Le backend lit ce header pour identifier l'utilisateur sur les routes protégées.
+// Format : "Authorization: Bearer eyJhbGciO..." (standard JWT dans les API REST)
+const axiosAuth = () => ({ headers: { Authorization: `Bearer ${token.value}` } })
+
+// ================================================
+// FONCTIONS AUTHENTIFICATION
+// ================================================
+
+// Restaure la session utilisateur au chargement de la page.
+// Cas d'usage : l'utilisateur recharge la page ou revient plus tard.
+// Le token a été sauvegardé en localStorage lors de la dernière connexion.
+const restaurerSession = async () => {
+  const tokenStocke = localStorage.getItem('voyage_token') // Récupère le token sauvegardé
+  if (!tokenStocke) return // Aucun token = jamais connecté ou déjà déconnecté → on arrête
+
+  token.value = tokenStocke // Met à jour la variable réactive token
+
+  try {
+    // Envoie le token au backend pour vérifier qu'il est encore valide (non expiré)
+    const response = await axios.get(`${API_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${tokenStocke}` } // Header d'authentification standard
+    })
+    // Token valide → restaure l'utilisateur connecté avec les données fraîches de la DB
+    utilisateurConnecte.value = response.data.utilisateur
+  } catch {
+    // Le catch n'a pas de paramètre (err) car on n'en a pas besoin — l'erreur est gérée silencieusement.
+    // Causes possibles : token expiré (après 7 jours), token falsifié, utilisateur supprimé.
+    // Solution : vider le localStorage pour repartir sur une session vierge
+    localStorage.removeItem('voyage_token')
+    token.value = null                 // Plus de token valide
+    utilisateurConnecte.value = null   // Plus d'utilisateur connecté
+  }
+}
+
+// Connecte un utilisateur existant.
+// Appelée quand le formulaire de connexion est soumis (@submit.prevent="seConnecter").
+const seConnecter = async () => {
+  authLoading.value = true  // Désactive le bouton pendant la requête
+  authMessage.value = ''    // Efface les messages d'erreur précédents
+  try {
+    const response = await axios.post(`${API_URL}/auth/login`, {
+      email: formLogin.value.email.trim(),          // trim() supprime les espaces accidentels
+      mot_de_passe: formLogin.value.mot_de_passe    // Envoyé en clair (HTTPS en prod chiffrerait)
+    })
+
+    // Déstructuration avec renommage : token est un nom réservé dans ce scope
+    // donc on renomme response.data.token → newToken
+    const { token: newToken, utilisateur } = response.data
+
+    // Stocke le token dans localStorage (persiste même après fermeture du navigateur)
+    localStorage.setItem('voyage_token', newToken)
+    token.value = newToken                     // Met à jour la variable réactive
+    utilisateurConnecte.value = utilisateur    // Affiche le nom dans la nav
+
+    modalAuthActive.value = null               // Ferme la modale
+    formLogin.value = { email: '', mot_de_passe: '' } // Vide les champs pour sécurité
+
+    // Redirection automatique vers la page admin si le rôle est 'admin'
+    // Un utilisateur normal reste sur la page courante après connexion
+    if (utilisateur.role === 'admin') {
+      pageActive.value = 'admin'
+      window.scrollTo({ top: 0, behavior: 'smooth' }) // Remonte en haut de page
+    }
+  } catch (err) {
+    // err.response?.data?.message : message d'erreur du backend (ex: "Email ou mot de passe incorrect")
+    // ?. (optional chaining) : évite une erreur si err.response est undefined (problème réseau)
+    // || 'Erreur de connexion' : message de secours si le backend ne répond pas
+    authMessage.value = err.response?.data?.message || 'Erreur de connexion'
+    authMessageType.value = 'erreur' // Affiche le message en rouge
+  } finally {
+    authLoading.value = false // Réactive le bouton dans tous les cas
+  }
+}
+
+// Inscrit un nouvel utilisateur et le connecte automatiquement.
+// Appelée quand le formulaire d'inscription est soumis (@submit.prevent="sInscrire").
+const sInscrire = async () => {
+  authLoading.value = true
+  authMessage.value = ''
+
+  // Validation côté frontend : vérifie que les deux mots de passe correspondent.
+  // Cette vérification n'est pas faite par le backend (il ne reçoit pas mot_de_passe_confirm).
+  if (formRegister.value.mot_de_passe !== formRegister.value.mot_de_passe_confirm) {
+    authMessage.value = 'Les mots de passe ne correspondent pas'
+    authMessageType.value = 'erreur'
+    authLoading.value = false // Réactive le bouton immédiatement (pas de requête envoyée)
+    return                    // Arrête la fonction sans appeler le backend
+  }
+
+  try {
+    const response = await axios.post(`${API_URL}/auth/register`, {
+      nom: formRegister.value.nom.trim(),          // trim() évite les espaces parasites
+      prenom: formRegister.value.prenom.trim(),
+      email: formRegister.value.email.trim(),
+      mot_de_passe: formRegister.value.mot_de_passe
+      // mot_de_passe_confirm n'est PAS envoyé — le backend n'en a pas besoin
+    })
+
+    const { token: newToken, utilisateur } = response.data // Renommage pour éviter conflit de nom
+    localStorage.setItem('voyage_token', newToken)         // Persiste la session
+    token.value = newToken
+    utilisateurConnecte.value = utilisateur  // Connecte directement après inscription
+
+    modalAuthActive.value = null // Ferme la modale
+
+    // Vide tous les champs du formulaire (y compris les mots de passe pour la sécurité)
+    formRegister.value = { nom: '', prenom: '', email: '', mot_de_passe: '', mot_de_passe_confirm: '' }
+  } catch (err) {
+    // Ex: "Cet email est déjà utilisé" si l'email existe déjà en base
+    authMessage.value = err.response?.data?.message || 'Erreur lors de l\'inscription'
+    authMessageType.value = 'erreur'
+  } finally {
+    authLoading.value = false
+  }
+}
+
+// Déconnecte l'utilisateur et réinitialise tout l'état d'authentification.
+const seDeconnecter = () => {
+  localStorage.removeItem('voyage_token')  // Supprime le token du stockage persistant
+  token.value = null                       // Plus de token en mémoire
+  utilisateurConnecte.value = null         // Plus d'utilisateur connecté → nav se met à jour
+
+  // Si l'utilisateur était sur la page admin, il n'a plus le droit d'y être
+  // On le redirige vers l'accueil pour éviter d'afficher une page vide ou protégée
+  if (pageActive.value === 'admin') {
+    pageActive.value = 'home'
+  }
+}
+
+// ---- Fonctions admin ----
+
+// Envoie le formulaire admin au backend pour ajouter un nouveau voyage.
+// La route POST /api/voyages est protégée côté backend (verifierToken + verifierAdmin).
+const ajouterVoyage = async () => {
+  adminLoading.value = true  // Désactive le bouton pendant l'envoi
+  adminMessage.value = ''    // Efface les messages précédents
+
+  try {
+    const response = await axios.post(
+      `${API_URL}/voyages`,
+      {
+        ...formAdmin.value,  // Spread : copie tous les champs de formAdmin (titre, image, etc.)
+        // Les champs numériques sont stockés en string dans le formulaire HTML
+        // → on les convertit avant envoi pour que MySQL les accepte
+        prix: parseFloat(formAdmin.value.prix),                        // "1200" → 1200.0
+        duree: parseInt(formAdmin.value.duree),                        // "7" → 7
+        placesDisponibles: parseInt(formAdmin.value.placesDisponibles) // "20" → 20
+      },
+      axiosAuth() // 3e argument d'axios.post = config → ajoute le header Authorization: Bearer <token>
+    )
+
+    adminMessage.value = response.data.message  // Ex: "Voyage "Bali" ajouté avec succès !"
+    adminMessageType.value = 'succes'           // Affiche en vert
+
+    // Réinitialise complètement le formulaire pour permettre un nouvel ajout
+    formAdmin.value = {
+      titre: '', destination: '', description: '',
+      prix: '', duree: '', dateDepart: '', dateRetour: '',
+      image: '', video: '', placesDisponibles: '', categorie: '', inclus: []
+    }
+    nouvelInclus.value = '' // Vide aussi le champ temporaire d'ajout d'inclus
+
+    // Recharge la liste des voyages pour que le nouveau voyage apparaisse dans le catalogue
+    await chargerVoyages()
+
+    // Efface automatiquement le message de succès après 5 secondes
+    setTimeout(() => { adminMessage.value = '' }, 5000) // 5000ms = 5 secondes
+  } catch (err) {
+    // Gestion spéciale des erreurs d'authentification :
+    // 401 = token manquant, 403 = token expiré ou rôle insuffisant
+    // Dans les deux cas, la session est invalide → on déconnecte l'utilisateur
+    if (err.response?.status === 401 || err.response?.status === 403) {
+      adminMessage.value = 'Session expirée. Reconnectez-vous.'
+      seDeconnecter() // Vide le token et redirige vers l'accueil
+    } else {
+      adminMessage.value = err.response?.data?.message || 'Erreur lors de l\'ajout'
+    }
+    adminMessageType.value = 'erreur' // Affiche en rouge
+  } finally {
+    adminLoading.value = false // Réactive le bouton dans tous les cas
+  }
+}
+
+// Ajoute un service à la liste "inclus" du formulaire admin.
+// Déclenché par le bouton "+ Ajouter" ou par la touche Entrée dans le champ.
+const ajouterInclus = () => {
+  const item = nouvelInclus.value.trim() // trim() évite d'ajouter des espaces seuls
+  // Conditions : item non vide ET pas déjà dans la liste (évite les doublons)
+  // .includes() vérifie si le tableau contient déjà cet item
+  if (item && !formAdmin.value.inclus.includes(item)) {
+    formAdmin.value.inclus.push(item)  // push() ajoute l'item à la fin du tableau
+    nouvelInclus.value = ''            // Vide le champ de saisie pour la prochaine entrée
+  }
+}
+
+// Supprime un service de la liste "inclus" par son index.
+// index = position dans le tableau (0 = premier élément).
+const supprimerInclus = (index) => {
+  // splice(index, 1) : supprime 1 élément à la position "index"
+  // Vue.js détecte automatiquement cette modification et met à jour l'affichage
+  formAdmin.value.inclus.splice(index, 1)
+}
+
+// ================================================
 // FONCTIONS ASYNCHRONES — Requêtes vers l'API
 // async/await : permet d'attendre la réponse du serveur avant de continuer
 // try/catch   : gère les erreurs si le serveur ne répond pas
@@ -1076,13 +1609,27 @@ const formatDateAvis = (isoString) => {
   return `Il y a ${Math.floor(jours / 30)} mois`
 }
 
-// Transfère les dates de la page détail vers le formulaire de réservation,
-// puis navigue vers la page de réservation
+// Navigue vers la page de réservation avec les dates choisies sur la page détail.
+// GARDE : la réservation nécessite un compte — ouvre la modale login si non connecté.
 const allerReserver = () => {
+  // Si l'utilisateur n'est pas connecté, on l'invite à se connecter avant de continuer
+  if (!estConnecte.value) {
+    modalAuthActive.value = 'login'                            // Ouvre la modale sur l'onglet Connexion
+    authMessage.value = 'Connectez-vous pour réserver un voyage' // Message d'information
+    authMessageType.value = 'erreur'                           // Affichage en rouge pour attirer l'attention
+    return // Arrête la fonction ici — pas de redirection vers la réservation
+  }
+
+  // Transfère les dates choisies sur la page détail vers le formulaire de réservation
   form.value.dateDepart = detailDateDepart.value
   form.value.dateRetour = detailDateRetour.value
+
+  // Prérempli les infos personnelles depuis le compte connecté (gain de temps pour l'utilisateur)
+  form.value.email = utilisateurConnecte.value.email
+  form.value.nom = utilisateurConnecte.value.nom
+  form.value.prenom = utilisateurConnecte.value.prenom
+
   pageActive.value = 'reservation'
-  // Scroll vers le haut de la page (behavior: 'smooth' = animation fluide)
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
@@ -1138,7 +1685,10 @@ const envoyerReservation = async () => {
       voyageId: voyageSelectionne.value.id,
       titre: voyageSelectionne.value.titre,
       destination: voyageSelectionne.value.destination,
-      prix: voyageSelectionne.value.prix
+      prix: voyageSelectionne.value.prix,
+      // ?.id (optional chaining) : accède à .id sans erreur si utilisateurConnecte est null
+      // || null : si l'utilisateur n'est pas connecté, on envoie null (réservation anonyme)
+      utilisateurId: utilisateurConnecte.value?.id || null
     })
 
     // Stocke la réservation retournée par le serveur (utilisée sur la page de confirmation)
@@ -1240,6 +1790,7 @@ const getNomVoyage = (voyageId) => {
 // C'est ici qu'on initialise les données au démarrage de l'application.
 // ================================================
 onMounted(async () => {
+  await restaurerSession()  // Restaure la session si token valide en localStorage
   await chargerVoyages()    // Charge les voyages en premier (await = attend la fin)
   chargerAvisAccueil()      // Charge les avis de l'accueil (pas besoin d'attendre)
   chargerStatsAvis()        // Charge le nombre d'avis par voyage
@@ -1263,23 +1814,35 @@ watch(detailDateDepart, (newDepart) => {
   }
 })
 
-// Formate le numéro de carte automatiquement en groupes de 4 chiffres
+// Formate le numéro de carte bancaire automatiquement en groupes de 4 chiffres.
+// Déclenché à chaque frappe dans le champ numeroCarte.
 // Exemple : l'utilisateur tape "4242424242424242" → affiché "4242 4242 4242 4242"
 watch(() => formPaiement.value.numeroCarte, (val) => {
-  // Supprime tout ce qui n'est pas un chiffre, limite à 16 chiffres
+  // /\D/g : regex qui cible tous les caractères NON-chiffres (\D = non digit, g = global = tous)
+  // .replace(/\D/g, '') : supprime les espaces, lettres, tirets... pour ne garder que les chiffres
+  // .slice(0, 16) : limite à 16 chiffres maximum (longueur standard d'une carte bancaire)
   const digits = val.replace(/\D/g, '').slice(0, 16)
-  // Insère un espace tous les 4 chiffres avec une regex, supprime l'espace final
+
+  // /(.{4})/g : capture un groupe de 4 caractères quelconques
+  // '$1 ' : remplace chaque groupe de 4 par lui-même + un espace
+  // .trim() : supprime l'espace final (après les 4 derniers chiffres)
   formPaiement.value.numeroCarte = digits.replace(/(.{4})/g, '$1 ').trim()
 })
 
-// Formate la date d'expiration automatiquement en "MM/AA"
+// Formate la date d'expiration de la carte automatiquement au format "MM/AA".
+// Déclenché à chaque frappe dans le champ expiration.
 // Exemple : l'utilisateur tape "1224" → affiché "12/24"
 watch(() => formPaiement.value.expiration, (val) => {
+  // Garde uniquement les chiffres, limité à 4 (2 pour le mois + 2 pour l'année)
   const digits = val.replace(/\D/g, '').slice(0, 4)
+
   if (digits.length >= 3) {
-    // Insère le "/" entre le mois (2 premiers chiffres) et l'année (2 derniers)
+    // .slice(0, 2) : prend les 2 premiers chiffres = mois (ex: "12")
+    // .slice(2)    : prend tous les chiffres à partir du 3e = année (ex: "24")
+    // On insère "/" entre les deux pour obtenir "12/24"
     formPaiement.value.expiration = digits.slice(0, 2) + '/' + digits.slice(2)
   } else {
+    // Moins de 3 chiffres : pas encore besoin du "/" (ex: "1" ou "12")
     formPaiement.value.expiration = digits
   }
 })
@@ -2713,5 +3276,306 @@ watch(() => formPaiement.value.expiration, (val) => {
   .contact-info-item:last-child { border-bottom: none; }
   .paiement-card { padding: 25px 20px; }
   .confirmation-card { padding: 40px 20px; }
+}
+
+/* ===================== AUTHENTIFICATION — NAV ===================== */
+
+/* Conteneur des boutons login/inscription dans la nav */
+.nav-auth {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Bouton Connexion : contour violet */
+.btn-nav-login {
+  background: none;
+  border: 2px solid #667eea;
+  padding: 8px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #667eea;
+  cursor: pointer;
+  border-radius: 20px;
+  transition: all 0.3s;
+}
+.btn-nav-login:hover { background: #667eea; color: white; }
+
+/* Bouton Inscription : fond violet */
+.btn-nav-register {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  padding: 8px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  border-radius: 20px;
+  transition: all 0.3s;
+}
+.btn-nav-register:hover { opacity: 0.85; transform: translateY(-1px); }
+
+/* Bloc utilisateur connecté */
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.nav-user-nom {
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Badge "Admin" rouge à côté du prénom */
+.badge-admin {
+  background: #e74c3c;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Bouton Déconnexion : contour rouge */
+.btn-nav-deconnexion {
+  background: none;
+  border: 2px solid #e74c3c;
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #e74c3c;
+  cursor: pointer;
+  border-radius: 20px;
+  transition: all 0.3s;
+}
+.btn-nav-deconnexion:hover { background: #e74c3c; color: white; }
+
+/* Bouton Admin dans la nav */
+.btn-admin-nav {
+  background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+  color: white !important;
+  border: none !important;
+}
+.btn-admin-nav.active {
+  background: linear-gradient(135deg, #c0392b, #a93226) !important;
+}
+
+/* ===================== MODALE AUTH ===================== */
+
+/* Fond sombre derrière la modale */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* Carte blanche de la modale */
+.modal-card {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  width: 100%;
+  max-width: 480px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Onglets Connexion / Inscription */
+.modal-tabs {
+  display: flex;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 25px;
+}
+.modal-tabs button {
+  background: none;
+  border: none;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #999;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.3s;
+}
+.modal-tabs button.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+  font-weight: 700;
+}
+
+/* Message feedback dans la modale */
+.auth-message {
+  margin-bottom: 15px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* Lien "pas de compte ?" sous le formulaire */
+.modal-switch-link {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 14px;
+  color: #666;
+}
+.modal-switch-link span {
+  color: #667eea;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Bouton ✕ fermeture en haut à droite de la modale */
+.modal-close {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.modal-close:hover { color: #333; }
+
+/* ===================== PAGE ADMIN ===================== */
+
+/* Carte principale du formulaire admin */
+.admin-card {
+  background: white;
+  border-radius: 15px;
+  padding: 40px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  margin: 0 auto 40px;
+}
+.admin-card h3 {
+  font-size: 22px;
+  color: #333;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+/* Message de retour admin */
+.admin-message {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+/* Grille à 3 colonnes pour prix / durée / places */
+.form-row-3 {
+  grid-template-columns: repeat(3, 1fr) !important;
+}
+
+/* Prévisualisation de l'image URL saisie */
+.admin-img-preview {
+  margin-top: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 200px;
+}
+.admin-img-preview img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+/* Tags des services inclus */
+.inclus-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  min-height: 20px;
+}
+.inclus-tag {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.inclus-tag-remove {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.8);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  line-height: 1;
+}
+.inclus-tag-remove:hover { color: white; }
+
+/* Ligne input + bouton "Ajouter" */
+.inclus-input-row {
+  display: flex;
+  gap: 10px;
+}
+.inclus-input-row input { flex: 1; }
+.btn-ajouter-inclus {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+.btn-ajouter-inclus:hover { opacity: 0.85; }
+
+/* Texte d'aide */
+.form-hint {
+  font-size: 12px;
+  color: #999;
+  margin-top: 5px;
+}
+
+/* Bouton de soumission admin pleine largeur */
+.btn-admin-submit {
+  width: 100%;
+  padding: 15px;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+/* Page "Accès refusé" */
+.admin-acces-refuse {
+  text-align: center;
+  padding: 80px 20px;
+  color: white;
+}
+.admin-acces-refuse h2 { font-size: 36px; margin-bottom: 15px; }
+.admin-acces-refuse p { font-size: 18px; margin-bottom: 30px; opacity: 0.9; }
+
+/* Message succès : fond vert clair */
+.message-succes {
+  background: #d4edda;
+  color: #155724;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
 }
 </style>
