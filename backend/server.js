@@ -34,13 +34,6 @@ const PORT = process.env.PORT || 5000;
 // Sans ce middleware, le navigateur bloquerait toutes les requêtes Axios du frontend.
 app.use(cors());
 
-// Sert les fichiers statiques du frontend buildé (dist → public)
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-app.use(express.static(join(__dirname, 'public')));
-
 // express.json() : parse automatiquement le body des requêtes au format JSON
 // Permet d'accéder à req.body dans les routes POST (sinon req.body serait undefined)
 app.use(express.json());
@@ -718,11 +711,6 @@ app.post('/api/contact', async (req, res) => {
     console.error('Erreur POST /api/contact :', err);
     res.status(500).json({ message: 'Erreur serveur' });
   }
-});
-
-// Catch-all : renvoie index.html pour que Vue Router gère les routes côté client
-app.get('*', (req, res) => {
-  res.sendFile(join(__dirname, 'public', 'index.html'));
 });
 
 // ================================================
